@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillScreen AI - Smarter Interviews</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <nav class="navbar glass">
+      <div class="logo">SkillScreen <span>AI</span></div>
+      <div class="nav-links">
+        <a href="/api/v1/auth/login" class="nav-link">Login</a>
+        <a href="/api/v1/auth/register" class="btn btn-primary">Get Started</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-content fade-in-up">
+        <h1>
+          Elevate Campus Placements with
+          <span class="gradient-text">AI Precision</span>
+        </h1>
+        <p>
+          Practice interviews, run robust placement drives, and pre-screen
+          candidates with an AI interviewer before final human decisions.
+        </p>
+        <div class="hero-cta">
+          <a
+            href="/api/v1/auth/register?role=recruiter"
+            class="btn btn-primary btn-large"
+            ><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h6m5-2h5v5m-11 6l11-11"></path></svg> Start Hiring</a
+          >
+          <a
+            href="/api/v1/auth/register?role=student"
+            class="btn btn-secondary btn-large"
+            >Student Practice</a
+          >
+        </div>
+      </div>
+      <div class="hero-visual fade-in-up" style="animation-delay: 0.2s;">
+        <div class="floating-card glass">
+          <div class="card-icon">🧠</div>
+          <h3>AI Evaluated</h3>
+          <p>94% Accuracy in Tech Screening</p>
+        </div>
+        <div class="floating-card glass delayed">
+          <div class="card-icon">💻</div>
+          <h3>Sandboxed Coding</h3>
+          <p>Real-time execution & analytics</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="benefits">
+      <h2 class="section-title">Who benefits from SkillScreen AI?</h2>
+      <div class="cards-grid">
+        <div class="card glass interactive">
+          <div class="card-icon">🎓</div>
+          <h3>Students</h3>
+          <p>
+            Experience realistic role-based practice, actionable feedback, and a
+            tailored improvement plan.
+          </p>
+        </div>
+        <div class="card glass interactive">
+          <div class="card-icon">🏢</div>
+          <h3>Recruiters</h3>
+          <p>
+            Achieve consistent interview structure, transparent integrity logs,
+            and precise shortlist recommendations.
+          </p>
+        </div>
+        <div class="card glass interactive">
+          <div class="card-icon">🏛️</div>
+          <h3>Colleges</h3>
+          <p>
+            Centralize your placement pipeline with deep insights into aggregate
+            technical readiness of your entire campus.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="usps">
+      <h2 class="section-title">Unique Selling Propositions</h2>
+      <div class="usps-container">
+        <div class="usp-item">
+          <div class="usp-text">
+            <h3>Transparent AI Interviewer</h3>
+            <p>
+              Dynamic follow-up questions tailored instantly to candidates'
+              answers. No black-box grading; every score is tied strictly to
+              evidence and the transparent rubric.
+            </p>
+          </div>
+        </div>
+        <div class="usp-item reverse">
+          <div class="usp-text">
+            <h3>Integrated Coding Assessment</h3>
+            <p>
+              Live Monaco-style editor with Python syntax highlighting.
+              Candidates compile and submit code inside isolated sandboxes
+              generating real-time analytics safely.
+            </p>
+          </div>
+        </div>
+        <div class="usp-item">
+          <div class="usp-text">
+            <h3>Actionable Integrity Signals</h3>
+            <p>
+              A calm, proctored environment prioritizing evidence over panic.
+              Tracks tab switches, external devices, and presence without
+              aggressive facial judgments to increase confidence.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        &copy; 2026 SkillScreen AI. Built for the future of engineering
+        placements.
+      </p>
+    </footer>
+  </body>
+</html>

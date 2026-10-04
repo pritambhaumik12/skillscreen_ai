@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Pre-check - SkillScreen AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .precheck-container { max-width: 800px; margin: 4rem auto; padding: 2rem; border-radius: 16px; text-align: center; }
+        .video-box { width: 100%; max-width: 400px; height: 300px; background: #000; border-radius: 12px; margin: 2rem auto; overflow: hidden; position: relative; border: 2px solid rgba(255,255,255,0.1); }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .check-item { margin: 1rem 0; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+        .status-indicator { width: 16px; height: 16px; border-radius: 50%; background: #ef4444; }
+        .status-indicator.ready { background: #10b981; }
+    </style>
+</head>
+<body>
+    <div class="precheck-container glass fade-in-up">
+        <h2>Hardware Pre-check</h2>
+        <p>Please ensure your camera and microphone are working correctly.</p>
+        
+        <div class="video-box">
+            <video id="previewVideo" autoplay muted playsinline></video>
+        </div>
+
+        <div class="check-item">
+            <div id="camStatus" class="status-indicator"></div>
+            <span>Camera Access</span>
+        </div>
+        <div class="check-item">
+            <div id="micStatus" class="status-indicator"></div>
+            <span>Microphone Access</span>
+        </div>
+
+        <form action="{{ url_for('interview.start_interview', session_id=session_id) }}" method="POST" style="margin-top: 2rem;">
+            <button type="submit" id="startBtn" class="btn btn-primary btn-large" disabled>Configure Hardware to Start</button>
+        </form>
+    </div>
+
+    <script>
+        async function setupMedia() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('previewVideo').srcObject = stream;
+                document.getElementById('camStatus').classList.add('ready');
+                document.getElementById('micStatus').classList.add('ready');
+                const startBtn = document.getElementById('startBtn');
+                startBtn.disabled = false;
+                startBtn.textContent = "Start Interview";
+            } catch (err) {
+                console.error("Media access denied:", err);
+                alert("Cannot access Camera/Microphone. Please allow permissions in your browser.");
+            }
+        }
+        setupMedia();
+    </script>
+</body>
+</html>

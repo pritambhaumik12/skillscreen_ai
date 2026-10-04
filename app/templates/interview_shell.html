@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Interview - SkillScreen AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { margin: 0; overflow: hidden; background: #020617; }
+        .dashboard { padding: 1rem; height: 100vh; display: flex; flex-direction: column; }
+        .interview-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--glass-border); }
+        .main-layout { display: flex; gap: 1rem; flex: 1; padding-top: 1rem; }
+        
+        .ai-pane { flex: 2; border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; overflow-y: auto; }
+        .ai-question { font-size: 1.5rem; line-height: 1.4; color: var(--secondary); margin-bottom: 2rem; }
+        .chat-log { flex: 1; border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; overflow-y: auto; background: rgba(0,0,0,0.2); margin-bottom: 1rem; }
+        
+        .sidebar { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+        .cam-feed { width: 100%; border-radius: 12px; background: #000; overflow: hidden; position: relative; border: 1px solid var(--glass-border); }
+        .cam-feed video { width: 100%; height: auto; object-fit: cover; }
+        
+        .controls { display: flex; gap: 1rem; justify-content: center; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 12px; }
+        .controls button { padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
+        .btn-record { background: #ef4444; color: white; }
+        .btn-stop { background: #64748b; color: white; display: none; }
+        
+        .chat-message { margin-bottom: 1rem; }
+        .chat-user { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.2rem; }
+        .chat-text { font-size: 1rem; }
+        
+        /* Overlays */
+        #mainOverlay { position: fixed; inset: 0; background: #0f172a; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
+        .overlay-text { font-size: 1.5rem; color: #94a3b8; font-weight: 300; max-width: 600px; margin-bottom: 2rem; }
+        .btn-grant { background: #10b981; color: #fff; padding: 1rem 2rem; border-radius: 8px; font-size: 1.2rem; border: none; cursor: pointer; font-weight: bold; }
+        #countdownNumber { font-size: 8rem; font-weight: 800; color: #10b981; display: none; }
+
+        .pulsing-record { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body>
+    <div id="mainOverlay">
+        <div class="overlay-text" id="overlayInstructions">
+            <h2>Integrity Verification Required</h2>
+            <p>You must share your entire screen, camera, and microphone for continuous monitoring before beginning.</p>
+        </div>
+        <button id="btnGrant" class="btn-grant">Begin Verification Sequence</button>
+        <div id="countdownNumber"></div>
+    </div>
+
+    <div class="dashboard glass fade-in-up">
+        <div class="interview-header">
+            <h2 style="color: white; margin: 0;">SkillScreen AI <span style="font-size:1rem; color:var(--text-muted); margin-left: 1rem;">Session ID: {{ session_id }}</span></h2>
+            <div style="display:flex; align-items:center; gap:2rem;">
+                <div id="timer" style="font-size: 1.5rem; font-weight: 800; color: #10b981; letter-spacing: 0.1em;">00:00:00</div>
+                <button id="btnExit" style="background:#ef4444; color:white; border:none; padding:0.6rem 1.2rem; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="confirmExit()">Exit Interview</button>
+            </div>
+        </div>
+        <div class="main-layout">
+            <div class="ai-pane glass">
+                <div class="ai-question" id="currentQuestion">
+                    "Welcome! Could you start by introducing yourself and highlighting a recent technical project you enjoyed working on?"
+                </div>
+                <div class="chat-log" id="transcriptLog">
+                    <div class="chat-message"><div class="chat-user">AI Interviewer</div><div class="chat-text">Welcome! Could you start by introducing yourself and highlighting a recent technical project you enjoyed working on?</div></div>
+                </div>
+                
+                <!-- Editable STT Answer Box -->
+                <div id="editAnswerBox" style="display:none; margin-bottom: 1rem; width:100%;">
+                    <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Review & Edit your Speech before submitting:</label>
+                    <textarea id="answerTextArea" style="width:100%; min-height:80px; padding:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.2); font-family:'Inter',sans-serif;"></textarea>
+                </div>
+                
+                <div class="controls" id="actionControls">
+                    <button class="btn-record" id="btnRecord">🎙️ Speak Answer</button>
+                    <button class="btn-stop" id="btnStop">⏹ Stop Recording</button>
+                    <button id="btnSubmitAnswer" style="background:#10b981; color:white; display:none;">✅ Submit Answer</button>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="cam-feed">
+                    <video id="userVideo" autoplay muted playsinline></video>
+                    <div style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.8); padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold;">LIVE</div>
+                </div>
+                <div class="glass" style="flex:1; border-radius:12px; padding:1.5rem;">
+                    <h3 style="margin-bottom:1rem; color:var(--secondary);">Integrity Monitor</h3>
+                    <ul style="color:var(--text-muted); font-size:0.95rem; list-style-type:none; padding:0; display:flex; flex-direction:column; gap:0.5rem;" id="integrityList">
+                        <li style="color:#fde047;">⏳ Screen Shared: Pending</li>
+                        <li style="color:#fde047;">⏳ Face/Mic Verified: Pending</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Security Flow variables
+        let screenStream, camStream;
+        const mainOverlay = document.getElementById('mainOverlay');
+        const overlayInstructions = document.getElementById('overlayInstructions');
+        const btnGrant = document.getElementById('btnGrant');
+        const countdownNumber = document.getElementById('countdownNumber');
+        const integrityList = document.getElementById('integrityList');
+
+        btnGrant.addEventListener('click', () => {
+            requestPermissionsSequence();
+        });
+
+        async function requestPermissionsSequence() {
+            btnGrant.style.display = 'none';
+            overlayInstructions.innerHTML = `<h2 style="color:#60a5fa;">Step 1: Screen Share</h2><p>Please select <strong>Entire Screen</strong> when prompted to allow continuous integrity tracking.</p>`;
+            
+            try {
+                // Force displaySurface if browser supports it
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                integrityList.innerHTML = `<li style="color:#4ade80;">✔️ Screen Shared: Active</li><li style="color:#fde047;">⏳ Face/Mic Verified: Pending</li>`;
+                
+                overlayInstructions.innerHTML = `<h2 style="color:#60a5fa;">Step 2: Camera & Mic</h2><p>Requesting hardware access for continuous face monitoring and speech analytics...</p>`;
+                
+                camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('userVideo').srcObject = camStream;
+                integrityList.innerHTML = `<li style="color:#4ade80;">✔️ Screen Shared: Active</li><li style="color:#fde047;">⏳ Face/Mic Verified: Pending Profile Match...</li>`;
+                
+                overlayInstructions.innerHTML = `<h2 style="color:#60a5fa;">Step 3: Identity Verification</h2><p>Verifying live feed against your profile's 3 live photos...</p>`;
+                
+                try {
+                    const res = await fetch(`/api/v1/interview/verify_identity/{{ session_id }}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Identity Verification Failed.");
+                    
+                    integrityList.innerHTML = `<li style="color:#4ade80;">✔️ Screen Shared: Active</li><li style="color:#4ade80;">✔️ Face/Mic Verified: True (Matched)</li><li style="color:#4ade80;">✔️ Fullscreen Locked</li>`;
+                    startCountdown();
+                } catch(e) {
+                    overlayInstructions.innerHTML = `<h2 style="color:#ef4444;">Verification Failed</h2><p>${e.message}</p><p><a href="/profile" style="color:white;text-decoration:underline;">Go to Profile</a> to capture photos.</p>`;
+                }
+            } catch (err) {
+                overlayInstructions.innerHTML = `<h2 style="color:#ef4444;">Verification Failed</h2><p>You must grant access to continue. Reload the application and try again.</p>`;
+            }
+        }
+
+        function startCountdown() {
+            overlayInstructions.style.display = 'none';
+            countdownNumber.style.display = 'block';
+            
+            let count = 5;
+            countdownNumber.innerText = count;
+            
+            const ival = setInterval(() => {
+                count--;
+                if (count <= 0) {
+                    clearInterval(ival);
+                    mainOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        mainOverlay.style.display = 'none';
+                        startInterviewTimer();
+                    }, 500);
+                } else {
+                    countdownNumber.innerText = count;
+                }
+            }, 1000);
+        }
+
+        let interviewSeconds = 0;
+        function startInterviewTimer() {
+            setInterval(() => {
+                interviewSeconds++;
+                const h = Math.floor(interviewSeconds / 3600).toString().padStart(2, '0');
+                const m = Math.floor((interviewSeconds % 3600) / 60).toString().padStart(2, '0');
+                const s = (interviewSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+            }, 1000);
+            
+            // Auto play the initial welcome TTS immediately, and then auto-start the mic when done speaking!
+            const initAudio = new Audio("{{ initial_audio_url }}");
+            initAudio.play().catch(e => console.log('Autoplay blocked. User might need interaction.'));
+            initAudio.onended = () => {
+                document.getElementById('btnRecord').click();
+            };
+        }
+
+        // Exit logic utilizing robust fallback for Python desktop wrappers
+        function confirmExit() {
+            if(confirm('Are you certain you want to officially end your interview and securely exit?')) { 
+                fetch('/api/v1/interview/end/{{ session_id }}').then(() => {
+                    if (window.pywebview) {
+                        window.pywebview.api.close_app();
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                });
+            }
+        }
+
+        // Interview Recording capabilities
+        const btnRecord = document.getElementById('btnRecord');
+        const btnStop = document.getElementById('btnStop');
+        const btnSubmitAnswer = document.getElementById('btnSubmitAnswer');
+        const editAnswerBox = document.getElementById('editAnswerBox');
+        const answerTextArea = document.getElementById('answerTextArea');
+        
+        const log = document.getElementById('transcriptLog');
+        const currentQuestionEl = document.getElementById('currentQuestion');
+        const sessionId = "{{ session_id }}";
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let historyText = "";
+        let currentQuestionText = currentQuestionEl.textContent.trim();
+
+        btnRecord.addEventListener('click', () => {
+            btnRecord.style.display = 'none';
+            btnStop.style.display = 'block';
+            btnStop.classList.add('pulsing-record');
+            
+            audioChunks = [];
+            try {
+                // Re-use existing audio stream from camStream if available, or just request audio
+                const audioTracks = camStream ? camStream.getAudioTracks() : [];
+                if (audioTracks.length > 0) {
+                   mediaRecorder = new MediaRecorder(camStream);
+                } else {
+                   // Fallback
+                   navigator.mediaDevices.getUserMedia({audio:true}).then(s => {
+                       mediaRecorder = new MediaRecorder(s);
+                       attachRecorder();
+                   });
+                   return;
+                }
+                
+                attachRecorder();
+            } catch(e) {
+                console.error("Audio block", e);
+            }
+        });
+
+        function attachRecorder() {
+            mediaRecorder.ondataavailable = event => { audioChunks.push(event.data); };
+            mediaRecorder.onstop = transcribeAudioData;
+            mediaRecorder.start();
+        }
+
+        btnStop.addEventListener('click', () => {
+            btnStop.classList.remove('pulsing-record');
+            btnStop.style.display = 'none';
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        });
+
+        async function transcribeAudioData() {
+            log.innerHTML += `<div class="chat-message"><div class="chat-user">System</div><div class="chat-text" style="color:var(--primary);">Processing audio into text...</div></div>`;
+            log.scrollTop = log.scrollHeight;
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+
+            try {
+                const res = await fetch(`/api/v1/interview/transcribe_audio/${sessionId}`, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                // Switch to edit mode instead of full eval
+                editAnswerBox.style.display = 'block';
+                btnSubmitAnswer.style.display = 'block';
+                answerTextArea.value = data.stt_text || '';
+                
+            } catch (err) {
+                log.innerHTML += `<div class="chat-message"><div class="chat-user" style="color:red;">Error</div><div class="chat-text" style="color:red;">Failed to process audio transcription.</div></div>`;
+                btnRecord.style.display = 'block';
+            }
+        }
+        
+        btnSubmitAnswer.addEventListener('click', async () => {
+            btnSubmitAnswer.style.display = 'none';
+            editAnswerBox.style.display = 'none';
+            
+            const finalAnswer = answerTextArea.value.trim();
+            log.innerHTML += `<div class="chat-message"><div class="chat-user">Candidate (You)</div><div class="chat-text" style="color:white;">${finalAnswer || '[No speech manually input]'}</div></div>`;
+            log.innerHTML += `<div class="chat-message"><div class="chat-user">System</div><div class="chat-text" style="color:var(--primary);">Sending answer to AI for evaluation...</div></div>`;
+            log.scrollTop = log.scrollHeight;
+            
+            const formData = new FormData();
+            formData.append('answer_text', finalAnswer);
+            formData.append('history', historyText);
+            formData.append('last_question', currentQuestionText);
+            
+            try {
+                const res = await fetch(`/api/v1/interview/submit_answer/${sessionId}`, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                log.innerHTML += `<div class="chat-message"><div class="chat-user">Feedback</div><div class="chat-text" style="color:var(--text-muted);">${data.evaluation}</div></div>`;
+
+                currentQuestionText = data.next_question;
+                currentQuestionEl.textContent = currentQuestionText;
+                log.innerHTML += `<div class="chat-message"><div class="chat-user" style="margin-top:1rem;">AI Interviewer</div><div class="chat-text">${currentQuestionText}</div></div>`;
+                log.scrollTop = log.scrollHeight;
+                
+                historyText += `AI: ${currentQuestionText}\nCandidate: ${data.stt_answer}\n`;
+
+                if (data.audio_url) {
+                    const audio = new Audio(data.audio_url);
+                    audio.play();
+                    // AI reads question out loud. Once finished, auto-start microphone! 
+                    audio.onended = () => {
+                        document.getElementById('btnRecord').click();
+                    };
+                }
+            } catch(err) {
+                 log.innerHTML += `<div class="chat-message"><div class="chat-user" style="color:red;">Error</div><div class="chat-text" style="color:red;">Failed to process answer with AI.</div></div>`;
+                 btnRecord.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SkillScreen AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .auth-container { max-width: 600px; margin: 4rem auto; padding: 2rem; border-radius: 16px; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem;}
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; }
+        .flash { padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+        .flash.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .flash.success { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar glass">
+        <a href="/" style="text-decoration:none;"><div class="logo">SkillScreen <span>AI</span></div></a>
+    </nav>
+    <div class="auth-container glass fade-in-up">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Create your account</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.register') }}" onsubmit="return handleFormSubmit()">
+            <div class="form-group">
+                <label>I am a...</label>
+                <select name="role" id="roleSelect" onchange="toggleEmployeeFields()" required>
+                    <option value="employee">Employee</option>
+                    <option value="employer">Employer</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" required>
+            </div>
+            
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Email Address (Unique)</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone No. (WhatsApp Preferred)</label>
+                    <input type="text" name="phone">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="date_of_birth" style="color-scheme: dark;">
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Rather not to say">Rather not to say</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" name="confirm_password" required>
+                </div>
+            </div>
+
+            <div id="employeeFields" style="display:block;">
+                <hr style="border:0; border-top: 1px solid rgba(255,255,255,0.1); margin: 2rem 0;">
+                <h3 style="margin-bottom: 1rem; color: #fff; font-size: 1.1rem;">Professional Background</h3>
+                
+                <div class="form-group">
+                    <label>Job Experience</label>
+                    <select name="job_experience">
+                        <option value="Fresher">Fresher</option>
+                        <option value="1–3 years">1–3 years</option>
+                        <option value="4–6 years">4–6 years</option>
+                        <option value="6+ years">6+ years</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Job roles (separated by comma)</label>
+                    <input type="text" id="jobRolesInput" name="job_roles" placeholder="e.g. Developer, Designer" oninput="updateCompanyInputs()" autocomplete="off">
+                    <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:0.3rem;">Type your roles and we will prompt for the company.</small>
+                </div>
+                <div id="companyInputsContainer" style="margin-top: 1rem; padding-left: 1rem; border-left: 2px solid rgba(255,255,255,0.1);"></div>
+                <input type="hidden" name="company_names" id="companyNamesHidden">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1.5rem;">Proceed</button>
+            <p style="text-align: center; margin-top: 2rem; color: #94a3b8;">Already have an account? <a href="/api/v1/auth/login" style="color:var(--primary)">Login</a></p>
+        </form>
+    </div>
+
+    <script>
+        function toggleEmployeeFields() {
+            const role = document.getElementById('roleSelect').value;
+            document.getElementById('employeeFields').style.display = role === 'employee' ? 'block' : 'none';
+        }
+
+        function updateCompanyInputs() {
+            const rolesStr = document.getElementById('jobRolesInput').value;
+            const roles = rolesStr.split(',').map(r => r.trim()).filter(r => r);
+            const container = document.getElementById('companyInputsContainer');
+            container.innerHTML = '';
+            
+            roles.forEach((role, i) => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `<label style="color:#e2e8f0; font-size: 0.85rem;">Company Name for <span style="color:#6366f1;">${role}</span></label>
+                                 <input type="text" class="company-input" data-index="${i}" placeholder="Where were you a ${role}?">`;
+                container.appendChild(div);
+            });
+        }
+
+        function handleFormSubmit() {
+            const role = document.getElementById('roleSelect').value;
+            if (role === 'employee') {
+                const inputs = document.querySelectorAll('.company-input');
+                const names = Array.from(inputs).map(inp => inp.value.trim());
+                document.getElementById('companyNamesHidden').value = names.join(',');
+            } else {
+                document.getElementById('companyNamesHidden').value = '';
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

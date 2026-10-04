@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiter Dashboard - SkillScreen AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .dashboard { padding: 4rem 5%; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar glass">
+        <a href="/" style="text-decoration:none;"><div class="logo">SkillScreen <span>AI</span></div></a>
+        <div class="nav-links">
+            <span style="color:#94a3b8;">Recruiter Mode</span>
+            <a href="/api/v1/auth/logout" class="nav-link">Logout</a>
+        </div>
+    </nav>
+    <div class="dashboard fade-in-up">
+        <div class="dashboard-header">
+            <h2>Recruiter Console</h2>
+            <a href="#" class="btn btn-primary">Create Placement Drive</a>
+        </div>
+        <div class="cards-grid">
+            <div class="card glass interactive">
+                <h3>0</h3>
+                <p>Active Drives</p>
+            </div>
+            <div class="card glass interactive">
+                <h3>0</h3>
+                <p>Candidates Evaluated</p>
+            </div>
+            <div class="card glass interactive">
+                <h3>0</h3>
+                <p>Pending Reviews</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
