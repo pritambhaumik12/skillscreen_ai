@@ -421,7 +421,7 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 <div align="center">
 
-**Built with ❤️ for Campus Placements and Hacktoberfest 2026**
+**Built with ❤️ for Campus Placements by PRITAM**
 
 <sub>Give this repository a ⭐ if you found it helpful!</sub>
 
